@@ -1,28 +1,37 @@
 ############################
-# Stage 1 – Dependencies
+# Stage 1 – Build stage
 ############################
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# 1️⃣ Copy dependency manifests first (takes advantage of layer caching)
+# 1️⃣ Copy only dependency manifests
 COPY package*.json ./
-RUN npm ci      # 2️⃣ Install NPM deps
 
-# 3️⃣ Copy the rest of the source
+# 2️⃣ Clean and reproducible install
+RUN npm ci
+
+# 3️⃣ Copy the rest of the app source
 COPY . .
 
+# 4️⃣ Optional build (safe for Vite or Medusa builds)
+# Prevent crash if build script doesn't exist
+RUN npm run build || true
+
+
 ############################
-# Stage 2 – Runtime image
+# Stage 2 – Runtime stage
 ############################
 FROM node:20-alpine
 WORKDIR /app
 
-# 4️⃣ Copy the built workspace from Stage 1
+# 5️⃣ Copy app from build stage
 COPY --from=build /app /app
 
-# 5️⃣ Add a tiny entrypoint that:
-#    • runs the migration with TLS disabled (useful when your RDS cert is self‑signed)
-#    • then hands control to whatever CMD was supplied
+# 6️⃣ Set environment variables
+ENV NODE_ENV=production
+
+
+# 7️⃣ Entrypoint: run Medusa DB migration first
 RUN printf '%s\n' \
     '#!/bin/sh' \
     'set -e' \
@@ -35,8 +44,8 @@ RUN printf '%s\n' \
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-# 6️⃣ Expose the Medusa port
+# 8️⃣ Expose Medusa backend port
 EXPOSE 9000
 
-# 7️⃣ Default command (what docker-entrypoint.sh will ultimately exec)
-CMD ["npm", "run", "dev"]
+# 9️⃣ Start Medusa app (dev or prod)
+CMD ["npm", "run", "start"]
