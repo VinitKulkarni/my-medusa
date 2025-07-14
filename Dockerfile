@@ -23,11 +23,6 @@ WORKDIR /app
 # 4️⃣ Copy the built workspace from Stage 1
 COPY --from=build /app /app
 
-# 5️⃣ Copy .env into the runtime image
-#     (If you want to keep the DB creds out of the image,
-#     skip this and inject them at docker‑run time instead.)
-COPY .env .env
-
 # 6️⃣ Expose the Medusa port
 EXPOSE 9000
 
