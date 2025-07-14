@@ -6,7 +6,7 @@ WORKDIR /app
 
 # 1️⃣ Copy dependency manifests first (takes advantage of layer caching)
 COPY package*.json ./
-RUN npm install      # 2️⃣ Install NPM deps
+RUN npm ci      # 2️⃣ Install NPM deps
 
 # 3️⃣ Copy the rest of the source
 COPY . .
